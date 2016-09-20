@@ -1,22 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using System.Globalization;
-using System.Collections;
 
-namespace Learning
+namespace ConsoleIPaddressTool
 {
     class Program
     {
         static void Main(string[] args)
         {
-            string addressCIDR = "192.168.2.76/28";
+            // The host address is the (32 - n) bits
+            //var hostAddress = addressBinary.Substring(prefix, 32 - prefix);
 
-            Console.WriteLine("Address in CIDR notation: {0}", Regex.Match(addressCIDR, @"(\b\d{1,3}\.){3}\d{1,3}(\/\d{1,2}$)").ToString());
+            //Total addresses granted is (32-n in decimal) + 1 - 2. Is total addresses?
 
+            Console.WriteLine("IP Address Lab");
+            Console.WriteLine("1. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.76/28")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.76/28")));
+            Console.WriteLine("2. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.76/9")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.76/9")));
+            Console.WriteLine("3. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.137/27")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.137/27")));
+
+            Console.WriteLine("4. Total Addresses: {0}, Usable Addresses: {1}", FindTotalAddresses("101.10.2.8/15"), FindTotalUsableAddresses("101.10.2.8/15"));
+            Console.WriteLine("5. Total Addresses: {0}, Usable Addresses: {1}", FindTotalAddresses("101.10.2.8/29"), FindTotalUsableAddresses("101.10.2.8/29"));
+
+            Console.WriteLine("6. Broadcast Address: {0}, Last Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindBroadcastAddress("192.168.2.137/27")), BinaryStringAddressToDottedDecimal(FindLastAddress("192.168.2.137/27")));
+            Console.WriteLine("7. Broadcast Address: {0}, Last Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindBroadcastAddress("110.10.2.55/30")), BinaryStringAddressToDottedDecimal(FindLastAddress("110.10.2.55/30")));
+
+            Console.WriteLine("8. Subnet Prefix Length: {0}", FindSubnetPrefix("110.10.10.64/20", 10));
+
+            Console.WriteLine("9. Subnets: {0}, Total Addresses: {1}", FindSubnets("110.10.10.64/25", 28), FindTotalAddresses("110.10.10.64/25"));
+
+            Console.WriteLine("10. Total Addresses: {0}", FindTotalAddresses("156.78.51.24/25"));
+            Console.WriteLine("11. Total Addresses: {0}", FindTotalAddresses("156.78.51.24/30"));
+            Console.WriteLine("12. Total Addresses: {0}", FindTotalAddresses("166.25.132.0/3"));
+
+            Console.ReadKey();
+            Environment.Exit(1);
+        }
+
+        public static void ExtractPrefixAndAddressFromCIDR(string addressCIDR, out int prefix, out string binaryAddress)
+        {
             //Check if the CIDR address is correct
             if (!Regex.IsMatch(addressCIDR, @"(\b\d{1,3}\.){3}\d{1,3}(\/\d{1,2}$)"))
             {
@@ -50,20 +71,28 @@ namespace Learning
             }
 
             // Get the Address Prefix
-            int prefix = 0;
             int.TryParse(addressPrefix[1], out prefix);
 
             //The whole address in binary
-            string addressBinary = addressDottedBinary[0] + addressDottedBinary[1] + addressDottedBinary[2] + addressDottedBinary[3];
+            binaryAddress = addressDottedBinary[0] + addressDottedBinary[1] + addressDottedBinary[2] + addressDottedBinary[3];
+        }
 
-            // WRONG
-            // The network address is n bits where n is the prefix of CIDR notation
-            //var networkAddress = addressBinary.Substring(0, prefix);
-            
-            // WRONG
-            // The host address is (32 - n)
-            //var hostAddress = addressBinary.Substring(prefix, 32 - prefix);
+        public static void ExtractPrefixFromCIDR(string addressCIDR, out int prefix)
+        {
+            string address = "";
+            ExtractPrefixAndAddressFromCIDR(addressCIDR, out prefix, out address);
+        }
 
+        public static void ExtractAddressFromCIDR(string addressCIDR, out string address)
+        {
+            int prefix = 0;
+            ExtractPrefixAndAddressFromCIDR(addressCIDR, out prefix, out address);
+        }
+
+        public static string FindNetworkMask(string addressCIDR)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
             // The network mask is 1's for each bit n times with a trail of zeros at the end
             var networkMask = "";
             for (int index = 0; index < prefix; index++)
@@ -75,6 +104,14 @@ namespace Learning
                 networkMask += "0";
             }
 
+            return networkMask;
+        }
+
+        public static string FindBroadcastAddress(string addressCIDR)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
+
             // Broadcast address is (32-n) all 1's
             var broadcastAddress = "";
             for (int index = 0; index < prefix; index++)
@@ -85,32 +122,87 @@ namespace Learning
             {
                 broadcastAddress += "1";
             }
+            return broadcastAddress;
+        }
+
+        public static string FindNetworkAddress(string addressCIDR)
+        {
+            // WRONG
+            // The network address is n bits where n is the prefix of CIDR notation
+            //var networkAddress = addressBinary.Substring(0, prefix);
+
+            string addressBinary = "";
+            ExtractAddressFromCIDR(addressCIDR, out addressBinary);
 
             // The Network Address is (any address) (bitwise AND) (network mask)
-            var networkAddressInt = BinaryStringToInt(addressBinary) & BinaryStringToInt(networkMask);
+            var networkAddressInt = BinaryStringToInt(addressBinary) & BinaryStringToInt(FindNetworkMask(addressCIDR));
+            string networkAddressBinary = Convert.ToString(networkAddressInt, 2);
+
+            return networkAddressBinary;
+        }
+
+        public static string FindFirstAddress(string addressCIDR)
+        {
+            string addressBinary = "";
+            ExtractAddressFromCIDR(addressCIDR, out addressBinary);
+
+            // The first address is the network address - 2
+            var networkAddressInt = BinaryStringToInt(FindNetworkAddress(addressCIDR));
             var firstAddressInt = networkAddressInt - 2;
-            string networkAddressBinary = Convert.ToString(firstAddressInt, 2);
             string firstAddressBinary = Convert.ToString(firstAddressInt, 2);
 
+            return firstAddressBinary;
+        }
+
+        public static string FindLastAddress(string addressCIDR)
+        {
+            string addressBinary = "";
+            ExtractAddressFromCIDR(addressCIDR, out addressBinary);
+
             // The Last Address is (any address) (bitwise OR) [NOT(network mask)]
-            int lastAddressInt = BinaryStringToInt(addressBinary) | ~BinaryStringToInt(networkMask);
+            int lastAddressInt = BinaryStringToInt(addressBinary) | ~BinaryStringToInt(FindNetworkMask(addressCIDR));
             string lastAddressBinary = Convert.ToString(lastAddressInt, 2);
+
+            return lastAddressBinary;
+        }
+
+        public static int FindTotalAddresses(string addressCIDR)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
 
             // The total addresses is 2 ^ (32-n)
             int totalAddresses = (int)Math.Pow(2, (32 - prefix));
 
-            // The number of usable addresses is 
+            return totalAddresses;
+        }
+
+        public static int FindTotalUsableAddresses(string addressCIDR)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
+
+            int totalAddresses = FindTotalAddresses(addressCIDR);
+
+            // The number of usable addresses is total addresses - 2
             //int usableAddresses = (32 - prefix) + 1 - 2;
             int usableAddresses = totalAddresses - 2;
 
-            //Total addresses granted is (32-n in decimal) + 1 - 2. Is total addresses?
+            return usableAddresses;
+        }
+
+        public static int FindSubnetPrefix(string addressCIDR, int subnets)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
 
             //prefix length for number of subnets is ?
-            // subnet prefix = prefix + log base 2 (number of subnets (power of 2))
-            // Read for subnets
-            Console.Write("Enter the number of subnets: ");
-            int subnets = 0;
-            //int.TryParse(Console.ReadLine(), out subnets);
+            // subnet prefix = prefix + log base 2 (number of subnets (divisable by 2))
+            if (subnets % 2 != 0)
+            {
+                throw new Exception("subnets is not divisable by 2");
+            }
+
             int subnetPrefixBits = 0;
             if (subnets > 0)
             {
@@ -121,39 +213,34 @@ namespace Learning
                 throw new Exception("subnets is not greater than 0 or not zero");
             }
 
+            return subnetPrefixBits;
+        }
+
+        public static int FindSubnets(string addressCIDR, int subnetPrefixLength)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
+
             //Maximum number of subnets with given subnet prefix length? Total addresses within the subnets (machines?)
             // http://www.sosmath.com/algebra/logs/log4/log47/log47.html
             // subnetPrefix = prefix + log base 2 (number of subnets)
             // subnetPrefix - prefix = log base 2 (subnets)
             // 2 ^ (subnetPrefix - prefix) = subnets
-            int subnetPrefixLength = 0;
-            Console.Write("Enter the subnet prefix length: ");
-            //int.TryParse(Console.ReadLine(), out subnetPrefixLength);
             int maximumSubnets = (int)Math.Pow(2, (subnetPrefixLength - prefix));
 
-            // The subnet broadcast address (32-n) bits to decimal + the zero (1) - 2 (first bit and last bit for special addresses)
-            string oneTwo = "00000001001000110100010101100111";
-            Console.WriteLine("\n" + oneTwo.Substring(0, 8));
-            Console.WriteLine(oneTwo.Substring(8, 8));
-            Console.WriteLine(oneTwo.Substring(16, 8));
-            Console.WriteLine(oneTwo.Substring(24, 8));
-            Console.WriteLine("Prefix: {0}", prefix.ToString());
-            Console.WriteLine("Address: {0} {1} {2}", addressBinary, BinaryStringToHex(addressBinary), BinaryStringToInt(addressBinary));
-            //Console.WriteLine("Network Address: {0} {1} {2} {3}", networkAddressBinary, BinaryStringToHex(networkAddressBinary), BinaryStringToInt(networkAddressBinary), BinaryStringToDottedDecimal(networkAddressBinary));
-            //Console.WriteLine("Host Address: {0} {1} {2}", hostAddress, BinaryStringToHex(hostAddress), BinaryStringToInt(hostAddress));
-            Console.WriteLine("Network Mask: {0} {1} {2}", networkMask, BinaryStringToHex(networkMask), BinaryStringToInt(networkMask));
-            Console.WriteLine("Broadcast Address: {0} {1} {2}", broadcastAddress, BinaryStringToHex(broadcastAddress), BinaryStringToInt(broadcastAddress));
-            Console.WriteLine("First Address: {0} {1} {2}", firstAddressBinary, BinaryStringToHex(firstAddressBinary), BinaryStringToInt(firstAddressBinary));
-            Console.WriteLine("Last Address: {0} {1} {2}", lastAddressBinary, BinaryStringToHex(lastAddressBinary), BinaryStringToInt(lastAddressBinary));
-            Console.WriteLine("Total Addresses: {0}", totalAddresses);
-            Console.WriteLine("Usable Addresses: {0}", usableAddresses);
-            Console.WriteLine("Subnet Prefix Length for given subnets: {0}", subnetPrefixBits);
-
-            Console.ReadKey();
+            return maximumSubnets;
         }
 
-        public static string BinaryStringAddresssToDottedDecimal(string binaryString)
+        public static string BinaryStringAddressToDottedDecimal(string binaryString)
         {
+            if (binaryString.Length != 32)
+            {
+                for (int index = binaryString.Length; index < 32; index++)
+                {
+                    binaryString = binaryString.Insert(0, "0");
+                }
+            }
+
             string result = "";
             result += BinaryStringToInt(binaryString.Substring(0, 8));
             result += ".";
@@ -170,7 +257,7 @@ namespace Learning
             string result = "";
             if (!(binaryString.Length % 4 == 0))
             {
-                for(int index = binaryString.Length; !(index % 4 == 0); index++)
+                for (int index = binaryString.Length; !(index % 4 == 0); index++)
                 {
                     binaryString = binaryString.Insert(0, "0");
                 }
@@ -235,10 +322,10 @@ namespace Learning
                         throw new Exception("BinaryStringToHex has a bug");
                 }
 
-                result += add;                
+                result += add;
             }
             result = result.Insert(0, "0x");
-            return result;            
+            return result;
         }
 
         /// <summary>
@@ -253,7 +340,7 @@ namespace Learning
             for (int index = 0; index < arrayLength; ++index)
             {
                 result[index] = Convert.ToString(array[index], 2);
-            }            
+            }
             return result;
         }
 
@@ -266,14 +353,14 @@ namespace Learning
         {
             int result = 0;
             int positionFromRight = binaryString.Length - 1;
-            for (int index = 0; index < binaryString.Length ; index++)
-            {                
+            for (int index = 0; index < binaryString.Length; index++)
+            {
                 char binaryStringIndexValue = binaryString[index];
                 if (binaryStringIndexValue == '1')
                 {
                     int intAdd = 0;
                     int.TryParse(Math.Pow(2, positionFromRight).ToString(), out intAdd);
-                    result += intAdd;                    
+                    result += intAdd;
                 }
                 positionFromRight--;
             }
@@ -325,15 +412,6 @@ namespace Learning
                 }
                 array[index] = word;
             }
-        }
-
-        /// <summary>
-        /// Do Something        
-        /// </summary>
-        /// <returns></returns>
-        static public int DoSomething()
-        {
-            return 0;
         }
     }
 }
