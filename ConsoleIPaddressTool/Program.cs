@@ -32,20 +32,27 @@ namespace ConsoleIPaddressTool
             Console.WriteLine("11. Total Addresses: {0}", FindTotalAddresses("156.78.51.24/30"));
             Console.WriteLine("12. Total Addresses: {0}", FindTotalAddresses("166.25.132.0/3"));
 
+            Console.WriteLine("\n" + "Subnetting Lab");
+
+            Console.WriteLine("1. \n \t a. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(2)));
+            Console.WriteLine("\t b. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(13)));
+            Console.WriteLine("\t c. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(5)));
+            Console.WriteLine("\t d. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(11)));
+            Console.WriteLine("\t e. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(9)));
+            Console.WriteLine("\t f. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(10)));
+            Console.WriteLine("\t g. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(4)));
+            Console.WriteLine("\t h. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(14)));
+            Console.WriteLine("\t i. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(6)));
+            Console.WriteLine("\t j. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(8)));
+            Console.WriteLine("\t k. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(12)));
+
             Console.ReadKey();
             Environment.Exit(1);
         }
 
-        public static void ExtractPrefixAndAddressFromCIDR(string addressCIDR, out int prefix, out string binaryAddress)
+        public static string AddressToBinaryString(string address)
         {
-            //Check if the CIDR address is correct
-            if (!Regex.IsMatch(addressCIDR, @"(\b\d{1,3}\.){3}\d{1,3}(\/\d{1,2}$)"))
-            {
-                throw new Exception("CIDR Address is wrong format");
-            }
-
-            string[] addressPrefix = Regex.Split(addressCIDR, @"\/");
-            string[] addressArr = Regex.Split(addressPrefix[0], @"\.");
+            string[] addressArr = Regex.Split(address, @"\.");
 
             //convert the addresses to binary strings
             List<int> addressListInt = new List<int>();
@@ -62,19 +69,33 @@ namespace ConsoleIPaddressTool
             //Add zeros to each address in the dotted binary.
             for (int index = 0; index < addressDottedBinary.Length; index++)
             {
-                string address = addressDottedBinary[index];
-                if (address.Length == 0 || address.Length < 8)
+                string addressByte = addressDottedBinary[index];
+                if (addressByte.Length == 0 || addressByte.Length < 8)
                 {
-                    address = AddZerosMakeByte(address);
-                    addressDottedBinary[index] = address;
+                    addressByte = AddZerosMakeByte(address);
+                    addressDottedBinary[index] = addressByte;
                 }
             }
+
+            //The whole address in binary
+            string binaryAddress = addressDottedBinary[0] + addressDottedBinary[1] + addressDottedBinary[2] + addressDottedBinary[3];
+            return binaryAddress;
+        }
+
+        public static void ExtractPrefixAndAddressFromCIDR(string addressCIDR, out int prefix, out string binaryAddress)
+        {
+            //Check if the CIDR address is correct
+            if (!Regex.IsMatch(addressCIDR, @"(\b\d{1,3}\.){3}\d{1,3}(\/\d{1,2}$)"))
+            {
+                throw new Exception("CIDR Address is wrong format");
+            }
+
+            string[] addressPrefix = Regex.Split(addressCIDR, @"\/");            
 
             // Get the Address Prefix
             int.TryParse(addressPrefix[1], out prefix);
 
-            //The whole address in binary
-            binaryAddress = addressDottedBinary[0] + addressDottedBinary[1] + addressDottedBinary[2] + addressDottedBinary[3];
+            binaryAddress = (AddressToBinaryString(addressPrefix[0]));
         }
 
         public static void ExtractPrefixFromCIDR(string addressCIDR, out int prefix)
@@ -89,26 +110,45 @@ namespace ConsoleIPaddressTool
             ExtractPrefixAndAddressFromCIDR(addressCIDR, out prefix, out address);
         }
 
+        public static string FindSubnetMask(int maskLength)
+        {
+            string subnetMask = "";
+
+            for (int index = 0; index < maskLength; index++)
+            {
+                subnetMask += "1";
+            }
+
+            for (int index = maskLength; index < 32; index++)
+            {
+                subnetMask += "0";
+            }
+            return subnetMask;
+        }
+
+        public static string FindSubNetworkAddress(string addressCIDR, int subnetMaskLength)
+        {
+            string subnetMask = FindSubnetMask(subnetMaskLength);
+            string address = "";
+            ExtractAddressFromCIDR(addressCIDR, out address);
+
+            int subNetworkAddressInt = BinaryStringToInt(address) & BinaryStringToInt(subnetMask);
+            return Convert.ToString(subNetworkAddressInt, 2);
+        }
+
         public static string FindNetworkMask(string addressCIDR)
         {
             int prefix = 0;
             ExtractPrefixFromCIDR(addressCIDR, out prefix);
             // The network mask is 1's for each bit n times with a trail of zeros at the end
-            var networkMask = "";
-            for (int index = 0; index < prefix; index++)
-            {
-                networkMask += "1";
-            }
-            for (int index = prefix; index < 32; index++)
-            {
-                networkMask += "0";
-            }
+            var networkMask = FindSubnetMask(prefix); 
 
             return networkMask;
         }
 
         public static string FindBroadcastAddress(string addressCIDR)
         {
+            //Is This Broadcast Address? HostMask?
             int prefix = 0;
             ExtractPrefixFromCIDR(addressCIDR, out prefix);
 
@@ -125,12 +165,65 @@ namespace ConsoleIPaddressTool
             return broadcastAddress;
         }
 
+        public static string FindBroadcastAddressAltDef(string addressCIDR)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
+            
+            string onesInHostAddress = "";
+            for (int index = prefix; index < 32; index++)
+            {
+                onesInHostAddress += "1";
+            }
+
+            string networkAddress = FindNetworkAddress(addressCIDR);
+            string splitedNetworkAddress = networkAddress.Split(null, prefix)[0];
+            string broadcastAddress = splitedNetworkAddress + onesInHostAddress;
+
+            return broadcastAddress; //Broadcast Address Last address?
+        }
+
+        /// <summary>
+        /// Finds the Valid Host Range. From subnetting lab.
+        /// </summary>
+        /// <param name="addressCIDR"></param>
+        /// <returns>Dotted Decimal Range Addresses</returns>
+        public static string FindValidHostRange(string addressCIDR)
+        {
+            string networkAddress = FindNetworkAddress(addressCIDR);
+            int beginValidRange = BinaryStringToInt(networkAddress) + 1;
+            string broadcastAddress = FindBroadcastAddressAltDef(addressCIDR);
+            int endValidRange = BinaryStringToInt(broadcastAddress) - 1;
+            string vaildHostRange = BinaryStringAddressToDottedDecimal(IntToBinaryString(beginValidRange)) + " to " + BinaryStringAddressToDottedDecimal(IntToBinaryString(endValidRange));
+            return vaildHostRange;
+        }
+
+        public static string IntToBinaryString(int input)
+        {
+            return Convert.ToString(input, 2);
+        }
+
+        public static int NumberOfBitsInMask(string subnetMask)
+        {
+            string subnetMaskBinary = AddressToBinaryString(subnetMask);
+            string subnetMaskOnes = subnetMaskBinary.Trim('0');
+            return subnetMaskOnes.Length;
+        }
+
+        /// <summary>
+        /// Finds the number of hosts of the given address in CIDR notation. Subnetting Lab
+        /// </summary>
+        /// <param name="addressCIDR"></param>
+        /// <returns></returns>
+        public static int FindNumberOfHosts(string addressCIDR)
+        {
+            int totalAddresses = FindTotalAddresses(addressCIDR);
+            int numberOfHosts = totalAddresses - 2; // Subtract nework and broadcast addresses
+            return numberOfHosts;
+        }
+
         public static string FindNetworkAddress(string addressCIDR)
         {
-            // WRONG
-            // The network address is n bits where n is the prefix of CIDR notation
-            //var networkAddress = addressBinary.Substring(0, prefix);
-
             string addressBinary = "";
             ExtractAddressFromCIDR(addressCIDR, out addressBinary);
 
