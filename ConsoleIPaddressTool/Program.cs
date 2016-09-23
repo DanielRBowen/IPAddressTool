@@ -8,11 +8,14 @@ namespace ConsoleIPaddressTool
     {
         static void Main(string[] args)
         {
-            // The host address is the (32 - n) bits
-            //var hostAddress = addressBinary.Substring(prefix, 32 - prefix);
+            PrintThirdLab();
 
-            //Total addresses granted is (32-n in decimal) + 1 - 2. Is total addresses?
+            Console.ReadKey();
+            Environment.Exit(1);
+        }
 
+        public static void PrintSecondLab()
+        {
             Console.WriteLine("IP Address Lab");
             Console.WriteLine("1. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.76/28")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.76/28")));
             Console.WriteLine("2. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.76/9")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.76/9")));
@@ -33,7 +36,10 @@ namespace ConsoleIPaddressTool
             Console.WriteLine("12. Total Addresses: {0}", FindTotalAddresses("166.25.132.0/3"));
 
             Console.WriteLine("\n" + "Subnetting Lab");
+        }
 
+        public static void PrintThirdLab()
+        {
             Console.WriteLine("1. \n \t a. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(2)));
             Console.WriteLine("\t b. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(13)));
             Console.WriteLine("\t c. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(5)));
@@ -46,8 +52,45 @@ namespace ConsoleIPaddressTool
             Console.WriteLine("\t j. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(8)));
             Console.WriteLine("\t k. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(12)));
 
-            Console.ReadKey();
-            Environment.Exit(1);
+            Console.WriteLine("2. ");
+            Console.WriteLine("Network Address: {0}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("132.8.150.67/22")));
+            Console.WriteLine("Broadcast Address: {0}", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef("132.8.150.67/22")));
+            Console.WriteLine("Number of Hosts: {0}", FindNumberOfHosts("132.8.150.67/22"));
+            Console.WriteLine("Valid Host Range: {0}", FindValidHostRange("132.8.150.67/22"));
+            Console.WriteLine("Netword Class: {0}", FindNetworkClass("132.8.150.67/22"));
+
+            Console.WriteLine("3. ");
+            Console.WriteLine("Network Address: {0}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("200.16.5.74/30")));
+            Console.WriteLine("Broadcast Address: {0}", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef("200.16.5.74/30")));
+            Console.WriteLine("Number of Hosts: {0}", FindNumberOfHosts("200.16.5.74/30"));
+            Console.WriteLine("Valid Host Range: {0}", FindValidHostRange("200.16.5.74/30"));
+
+            Console.WriteLine("4. "); //Instead of overload all functions. Just Find Number of bits in mask and then concat the address
+            int fourSubnetMaskPrefix = NumberOfBitsInMask("255.255.252.0");
+            string fourAddressCIDR = "166.0.13.8/" + fourSubnetMaskPrefix.ToString();
+            Console.WriteLine("Network Address: {0}", BinaryStringAddressToDottedDecimal(FindNetworkAddress(fourAddressCIDR)));
+            Console.WriteLine("Broadcast Address: {0}", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef(fourAddressCIDR)));
+            Console.WriteLine("Number of Hosts: {0}", FindNumberOfHosts(fourAddressCIDR));
+            Console.WriteLine("Valid Host Range: {0}", FindValidHostRange(fourAddressCIDR));
+
+            Console.WriteLine("5. ");
+            Console.WriteLine("Number of Bits in Subnet Mask: {0}", NumberOfBitsInMask("255.255.240.0"));
+            Console.WriteLine("Number of Hosts: {0}", FindNumberOfHostsFromSubnetMask("255.255.240.0"));
+
+            Console.WriteLine("6. ");
+            Console.WriteLine("Number of Bits in Subnet Mask: {0}", NumberOfBitsInMask("255.255.255.192"));
+            Console.WriteLine("Number of Hosts: {0}", FindNumberOfHostsFromSubnetMask("255.255.255.192"));
+
+            Console.WriteLine("7. ");
+            Console.WriteLine("Number of Bits in Subnet Mask: {0}", NumberOfBitsInMask("255.255.252.0"));
+            Console.WriteLine("Number of Hosts: {0}", FindNumberOfHostsFromSubnetMask("255.255.252.0"));
+
+            Console.WriteLine("8. ");
+            Console.WriteLine("Number of Bits in Subnet Mask: {0}", NumberOfBitsInMask("255.255.255.248"));
+            Console.WriteLine("Number of Hosts: {0}", FindNumberOfHostsFromSubnetMask("255.255.255.248"));
+
+            Console.WriteLine("9. ");
+            Console.WriteLine("Subnet Mask: {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(56, 1000, 'B')));
         }
 
         public static string AddressToBinaryString(string address)
@@ -72,7 +115,7 @@ namespace ConsoleIPaddressTool
                 string addressByte = addressDottedBinary[index];
                 if (addressByte.Length == 0 || addressByte.Length < 8)
                 {
-                    addressByte = AddZerosMakeByte(address);
+                    addressByte = AddZerosMakeByte(addressByte);
                     addressDottedBinary[index] = addressByte;
                 }
             }
@@ -90,7 +133,7 @@ namespace ConsoleIPaddressTool
                 throw new Exception("CIDR Address is wrong format");
             }
 
-            string[] addressPrefix = Regex.Split(addressCIDR, @"\/");            
+            string[] addressPrefix = Regex.Split(addressCIDR, @"\/");
 
             // Get the Address Prefix
             int.TryParse(addressPrefix[1], out prefix);
@@ -141,7 +184,7 @@ namespace ConsoleIPaddressTool
             int prefix = 0;
             ExtractPrefixFromCIDR(addressCIDR, out prefix);
             // The network mask is 1's for each bit n times with a trail of zeros at the end
-            var networkMask = FindSubnetMask(prefix); 
+            var networkMask = FindSubnetMask(prefix);
 
             return networkMask;
         }
@@ -165,21 +208,26 @@ namespace ConsoleIPaddressTool
             return broadcastAddress;
         }
 
+        // Bug?
         public static string FindBroadcastAddressAltDef(string addressCIDR)
         {
             int prefix = 0;
             ExtractPrefixFromCIDR(addressCIDR, out prefix);
-            
+
             string onesInHostAddress = "";
-            for (int index = prefix; index < 32; index++)
+            for (int index = 0; index < 32 - prefix; index++)
             {
                 onesInHostAddress += "1";
             }
 
             string networkAddress = FindNetworkAddress(addressCIDR);
-            string splitedNetworkAddress = networkAddress.Split(null, prefix)[0];
+            string splitedNetworkAddress = networkAddress.Substring(0, prefix);
             string broadcastAddress = splitedNetworkAddress + onesInHostAddress;
 
+            if (broadcastAddress.Length != 32)
+            {
+                throw new Exception("Broadcast Address is not 32 in length: " + broadcastAddress.Length);
+            }
             return broadcastAddress; //Broadcast Address Last address?
         }
 
@@ -210,6 +258,61 @@ namespace ConsoleIPaddressTool
             return subnetMaskOnes.Length;
         }
 
+        public static string FindSubnetMask(int sites, int maxHosts, char license)
+        {
+            int prefix = 0;
+            switch (license)
+            {
+                case 'A':
+                    prefix = 8;
+                    break;
+                case 'B':
+                    prefix = 16;
+                    break;
+                case 'C':
+                    prefix = 24;
+                    break;
+                default:
+                    throw new Exception("Not a valid class license");
+            }
+
+            // subnet prefix = prefix + log base 2 (number of subnets (divisable by 2))
+            int numberOfSubnets = sites * maxHosts;
+            int subnetPrefix = prefix + (int)Math.Log(numberOfSubnets, 2);
+            string subnetMaskBinary = FindSubnetMask(subnetPrefix);
+            return subnetMaskBinary;
+        }
+
+        public static char FindNetworkClass(string addressCIDR)
+        {
+            int prefix = 0;
+            ExtractPrefixFromCIDR(addressCIDR, out prefix);
+
+            char networkClass = '0';
+            if (prefix > 16 && prefix <= 24)
+            {
+                networkClass = 'C';
+            }
+            else if (prefix > 8 && prefix <= 16)
+            {
+                networkClass = 'B';
+            }
+            else if (prefix > 0 && prefix <= 8)
+            {
+                networkClass = 'A';
+            }
+            else
+            {
+                throw new Exception("Prefix doesn't have a valid class");
+            }
+
+            if (networkClass == '0')
+            {
+                throw new Exception("Prefix doesn't have a valid class");
+            }
+            return networkClass;
+        }
+
         /// <summary>
         /// Finds the number of hosts of the given address in CIDR notation. Subnetting Lab
         /// </summary>
@@ -218,6 +321,14 @@ namespace ConsoleIPaddressTool
         public static int FindNumberOfHosts(string addressCIDR)
         {
             int totalAddresses = FindTotalAddresses(addressCIDR);
+            int numberOfHosts = totalAddresses - 2; // Subtract nework and broadcast addresses
+            return numberOfHosts;
+        }
+
+        public static int FindNumberOfHostsFromSubnetMask(string subnetMask)
+        {
+            int prefix = NumberOfBitsInMask(subnetMask);
+            int totalAddresses = (int)Math.Pow(2, (32 - prefix));
             int numberOfHosts = totalAddresses - 2; // Subtract nework and broadcast addresses
             return numberOfHosts;
         }
@@ -326,6 +437,11 @@ namespace ConsoleIPaddressTool
 
         public static string BinaryStringAddressToDottedDecimal(string binaryString)
         {
+            if (binaryString.Length > 32 || binaryString.Length < 0)
+            {
+                throw new Exception("Binary string is greater than 32 or less than 0");
+            }
+
             if (binaryString.Length != 32)
             {
                 for (int index = binaryString.Length; index < 32; index++)
