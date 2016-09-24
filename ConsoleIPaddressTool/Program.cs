@@ -40,28 +40,28 @@ namespace ConsoleIPaddressTool
 
         public static void PrintThirdLab()
         {
-            Console.WriteLine("1. \n \t a. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(2)));
-            Console.WriteLine("\t b. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(13)));
-            Console.WriteLine("\t c. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(5)));
-            Console.WriteLine("\t d. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(11)));
-            Console.WriteLine("\t e. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(9)));
-            Console.WriteLine("\t f. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(10)));
-            Console.WriteLine("\t g. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(4)));
-            Console.WriteLine("\t h. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(14)));
-            Console.WriteLine("\t i. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(6)));
-            Console.WriteLine("\t j. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(8)));
-            Console.WriteLine("\t k. {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(12)));
+            Console.WriteLine("1. \n \t a. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(2)));
+            Console.WriteLine("\t b. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(13)));
+            Console.WriteLine("\t c. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(5)));
+            Console.WriteLine("\t d. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(11)));
+            Console.WriteLine("\t e. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(9)));
+            Console.WriteLine("\t f. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(10)));
+            Console.WriteLine("\t g. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(4)));
+            Console.WriteLine("\t h. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(14)));
+            Console.WriteLine("\t i. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(6)));
+            Console.WriteLine("\t j. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(8)));
+            Console.WriteLine("\t k. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(12)));
 
             Console.WriteLine("2. ");
             Console.WriteLine("Network Address: {0}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("132.8.150.67/22")));
-            Console.WriteLine("Broadcast Address", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef("132.8.150.67/22")));
+            Console.WriteLine("Broadcast Address: {0}", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef("132.8.150.67/22")));
             Console.WriteLine("Number of Hosts: {0}", FindNumberOfHosts("132.8.150.67/22"));
             Console.WriteLine("Valid Host Range: {0}", FindValidHostRange("132.8.150.67/22"));
             Console.WriteLine("Netword Class: {0}", FindNetworkClass("132.8.150.67/22"));
 
             Console.WriteLine("3. ");
             Console.WriteLine("Network Address: {0}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("200.16.5.74/30")));
-            Console.WriteLine("Broadcast Address", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef("200.16.5.74/30")));
+            Console.WriteLine("Broadcast Address: {0}", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef("200.16.5.74/30")));
             Console.WriteLine("Number of Hosts: {0}", FindNumberOfHosts("200.16.5.74/30"));
             Console.WriteLine("Valid Host Range: {0}", FindValidHostRange("200.16.5.74/30"));
 
@@ -69,7 +69,7 @@ namespace ConsoleIPaddressTool
             int fourSubnetMaskPrefix = NumberOfBitsInMask("255.255.252.0");
             string fourAddressCIDR = "166.0.13.8/" + fourSubnetMaskPrefix.ToString();
             Console.WriteLine("Network Address: {0}", BinaryStringAddressToDottedDecimal(FindNetworkAddress(fourAddressCIDR)));
-            Console.WriteLine("Broadcast Address", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef(fourAddressCIDR)));
+            Console.WriteLine("Broadcast Address: {0}", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef(fourAddressCIDR)));
             Console.WriteLine("Number of Hosts: {0}", FindNumberOfHosts(fourAddressCIDR));
             Console.WriteLine("Valid Host Range: {0}", FindValidHostRange(fourAddressCIDR));
 
@@ -214,15 +214,19 @@ namespace ConsoleIPaddressTool
             ExtractPrefixFromCIDR(addressCIDR, out prefix);
             
             string onesInHostAddress = "";
-            for (int index = prefix; index < 32; index++)
+            for (int index = 0; index < 32 - prefix; index++)
             {
                 onesInHostAddress += "1";
             }
 
             string networkAddress = FindNetworkAddress(addressCIDR);
-            string splitedNetworkAddress = networkAddress.Split(null, prefix)[0];
+            string splitedNetworkAddress = networkAddress.Substring(0, prefix);
             string broadcastAddress = splitedNetworkAddress + onesInHostAddress;
 
+            if (broadcastAddress.Length != 32)
+            {
+                throw new Exception("Broadcast Address is not 32 in length: " + broadcastAddress.Length);
+            }
             return broadcastAddress; //Broadcast Address Last address?
         }
 
@@ -432,6 +436,11 @@ namespace ConsoleIPaddressTool
 
         public static string BinaryStringAddressToDottedDecimal(string binaryString)
         {
+            if (binaryString.Length > 32 || binaryString.Length < 0)
+            {
+                throw new Exception("Binary string is greater than 32 or less than 0");
+            }
+
             if (binaryString.Length != 32)
             {
                 for (int index = binaryString.Length; index < 32; index++)
@@ -449,6 +458,15 @@ namespace ConsoleIPaddressTool
             result += ".";
             result += BinaryStringToInt(binaryString.Substring(24, 8));
             return result;
+        }
+
+        public static string BinaryStringAddressToDottedBinary(string binaryString)
+        {
+            binaryString = binaryString.Insert(8, ".");
+            binaryString = binaryString.Insert(17, ".");
+            binaryString = binaryString.Insert(26, ".");
+
+            return binaryString; // really dottedBinary.
         }
 
         public static string BinaryStringToHex(string binaryString)
