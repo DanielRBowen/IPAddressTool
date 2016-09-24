@@ -133,7 +133,7 @@ namespace ConsoleIPaddressTool
                 throw new Exception("CIDR Address is wrong format");
             }
 
-            string[] addressPrefix = Regex.Split(addressCIDR, @"\/");            
+            string[] addressPrefix = Regex.Split(addressCIDR, @"\/");
 
             // Get the Address Prefix
             int.TryParse(addressPrefix[1], out prefix);
@@ -208,11 +208,12 @@ namespace ConsoleIPaddressTool
             return broadcastAddress;
         }
 
+        // Bug?
         public static string FindBroadcastAddressAltDef(string addressCIDR)
         {
             int prefix = 0;
             ExtractPrefixFromCIDR(addressCIDR, out prefix);
-            
+
             string onesInHostAddress = "";
             for (int index = 0; index < 32 - prefix; index++)
             {
