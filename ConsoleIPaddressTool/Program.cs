@@ -57,7 +57,7 @@ namespace ConsoleIPaddressTool
             Console.WriteLine("Broadcast Address: {0}", BinaryStringAddressToDottedDecimal(FindBroadcastAddressAltDef("132.8.150.67/22")));
             Console.WriteLine("Number of Hosts: {0}", FindNumberOfHosts("132.8.150.67/22"));
             Console.WriteLine("Valid Host Range: {0}", FindValidHostRange("132.8.150.67/22"));
-            Console.WriteLine("Netword Class: {0}", FindNetworkClass("132.8.150.67/22"));
+            Console.WriteLine("Network Class: {0}", FindNetworkClass("132.8.150.67/22"));
 
             Console.WriteLine("3. ");
             Console.WriteLine("Network Address: {0}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("200.16.5.74/30")));
@@ -283,32 +283,43 @@ namespace ConsoleIPaddressTool
             return subnetMaskBinary;
         }
 
+        /// <summary>
+        /// Finds the Network class from the given address in CIDR notation.
+        /// To find the Class you look at the first 4 bits of an address
+        /// not a prefix. The fist bit is 0 then class A if 10 then B, 110 is C, 1110, D 11110 is E
+        /// </summary>
+        /// <param name="addressCIDR"></param>
+        /// <returns></returns>
         public static char FindNetworkClass(string addressCIDR)
         {
-            int prefix = 0;
-            ExtractPrefixFromCIDR(addressCIDR, out prefix);
+            string address = "";
+            ExtractAddressFromCIDR(addressCIDR, out address);
 
             char networkClass = '0';
-            if (prefix > 16 && prefix <= 24)
-            {
-                networkClass = 'C';
-            }
-            else if (prefix > 8 && prefix <= 16)
-            {
-                networkClass = 'B';
-            }
-            else if (prefix > 0 && prefix <= 8)
+
+            if (address.Substring(0, 1) == "0")
             {
                 networkClass = 'A';
             }
+            else if (address.Substring(0, 2) == "10")
+            {
+                networkClass = 'B';
+            }
+            else if (address.Substring(0, 3) == "110")
+            {
+                networkClass = 'C';
+            }
+            else if (address.Substring(0, 4) == "1110")
+            {
+                networkClass = 'D';
+            }
+            else if (address.Substring(0, 5) == "11110")
+            {
+                networkClass = 'E';
+            }
             else
             {
-                throw new Exception("Prefix doesn't have a valid class");
-            }
-
-            if (networkClass == '0')
-            {
-                throw new Exception("Prefix doesn't have a valid class");
+                throw new Exception("Address doesn't have a valid class");
             }
             return networkClass;
         }
@@ -598,7 +609,7 @@ namespace ConsoleIPaddressTool
             //int i = 0xFFFFFF;
 
             //Check if it fits within 0xFF, 255
-            if (binaryNumber.Length == 0 || binaryNumber.Length > 8 || !Regex.IsMatch(binaryNumber, @"\b[0-1]{1,8}"))
+            if (binaryNumber.Length == 0 || binaryNumber.Length > 8 || !Regex.IsMatch(binaryNumber, @"\b[0-1]{1,8}")) //Wrong regex for binary number
             {
                 throw new Exception("invalid binaryNumber");
             }
