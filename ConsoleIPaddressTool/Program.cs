@@ -8,7 +8,7 @@ namespace ConsoleIPaddressTool
     {
         static void Main(string[] args)
         {
-            PrintThirdLab();
+            
 
             Console.ReadKey();
             Environment.Exit(1);
@@ -17,29 +17,35 @@ namespace ConsoleIPaddressTool
         public static void PrintSecondLab()
         {
             Console.WriteLine("IP Address Lab");
+            //Wrong
             Console.WriteLine("1. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.76/28")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.76/28")));
+            //Wrong
             Console.WriteLine("2. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.76/9")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.76/9")));
+            //Wrong
             Console.WriteLine("3. Network Address: {0}, First Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindNetworkAddress("192.168.2.137/27")), BinaryStringAddressToDottedDecimal(FindFirstAddress("192.168.2.137/27")));
+
 
             Console.WriteLine("4. Total Addresses: {0}, Usable Addresses: {1}", FindTotalAddresses("101.10.2.8/15"), FindTotalUsableAddresses("101.10.2.8/15"));
             Console.WriteLine("5. Total Addresses: {0}, Usable Addresses: {1}", FindTotalAddresses("101.10.2.8/29"), FindTotalUsableAddresses("101.10.2.8/29"));
 
-            Console.WriteLine("6. Broadcast Address: {0}, Last Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindBroadcastAddress("192.168.2.137/27")), BinaryStringAddressToDottedDecimal(FindLastAddress("192.168.2.137/27")));
+            //Wrong Broadcast address is wrong
+            Console.WriteLine("6. Broadcast Address: {0}, Last Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindBroadcastAddress("192.168.2.137/27")), BinaryStringAddressToDottedDecimal(FindLastAddress("192.168.2.137/27"))); 
+            //wrong
             Console.WriteLine("7. Broadcast Address: {0}, Last Usable Address: {1}", BinaryStringAddressToDottedDecimal(FindBroadcastAddress("110.10.2.55/30")), BinaryStringAddressToDottedDecimal(FindLastAddress("110.10.2.55/30")));
-
+            //wrong
             Console.WriteLine("8. Subnet Prefix Length: {0}", FindSubnetPrefix("110.10.10.64/20", 10));
-
+            //wrong
             Console.WriteLine("9. Subnets: {0}, Total Addresses: {1}", FindSubnets("110.10.10.64/25", 28), FindTotalAddresses("110.10.10.64/25"));
 
             Console.WriteLine("10. Total Addresses: {0}", FindTotalAddresses("156.78.51.24/25"));
             Console.WriteLine("11. Total Addresses: {0}", FindTotalAddresses("156.78.51.24/30"));
             Console.WriteLine("12. Total Addresses: {0}", FindTotalAddresses("166.25.132.0/3"));
-
-            Console.WriteLine("\n" + "Subnetting Lab");
         }
 
         public static void PrintThirdLab()
         {
+            Console.WriteLine("\n" + "Subnetting Lab");
+
             Console.WriteLine("1. \n \t a. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(2)));
             Console.WriteLine("\t b. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(13)));
             Console.WriteLine("\t c. {0}", BinaryStringAddressToDottedBinary(FindSubnetMask(5)));
@@ -91,6 +97,17 @@ namespace ConsoleIPaddressTool
 
             Console.WriteLine("9. ");
             Console.WriteLine("Subnet Mask: {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(56, 1000, 'B')));
+        }
+
+        public static void PrintForthLab()
+        {
+
+        }
+
+        public static string[] FindOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses)
+        {
+            string[] networkAddresses = new string[numberOfAddresses];
+            return networkAddresses;
         }
 
         public static string AddressToBinaryString(string address)
@@ -344,6 +361,11 @@ namespace ConsoleIPaddressTool
             return numberOfHosts;
         }
 
+        /// <summary>
+        /// Wrong,
+        /// </summary>
+        /// <param name="addressCIDR"></param>
+        /// <returns></returns>
         public static string FindNetworkAddress(string addressCIDR)
         {
             string addressBinary = "";
