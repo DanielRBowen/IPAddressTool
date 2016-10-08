@@ -8,7 +8,7 @@ namespace ConsoleIPaddressTool
     {
         static void Main(string[] args)
         {
-            
+            PrintFourthLab();
 
             Console.ReadKey();
             Environment.Exit(1);
@@ -99,16 +99,78 @@ namespace ConsoleIPaddressTool
             Console.WriteLine("Subnet Mask: {0}", BinaryStringAddressToDottedDecimal(FindSubnetMask(56, 1000, 'B')));
         }
 
-        public static void PrintForthLab()
+        public static void PrintFourthLab()
         {
+            //PrintOrganizationNetworkAddresses("138.191.0.0/16", 11);
+            Console.WriteLine("Applied Science--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.0/20", 6); // Applied Science
+            Console.WriteLine("Arts & Humanities------------------------");
+            PrintOrganizationNetworkAddresses("138.191.16.0/20", 5); // Arts & Humanities
+            Console.WriteLine("Education---------------------------");
+            PrintOrganizationNetworkAddresses("138.191.32.0/20", 5); // Education
+            Console.WriteLine("Business & Economics-----------------------");
+            PrintOrganizationNetworkAddresses("138.191.48.0/20", 5); // Business & Economics
+            Console.WriteLine("Health-----------------------------");
+            PrintOrganizationNetworkAddresses("138.191.64.0/20", 7); // Health
+            Console.WriteLine("Science-------------------------------");
+            PrintOrganizationNetworkAddresses("138.191.80.0/20", 6); // Science
+            Console.WriteLine("Social & Behavioral Science----------------");
+            PrintOrganizationNetworkAddresses("138.191.96.0/20", 8); // Social & Behavioral Science
+            Console.WriteLine("Information Technology------------------");
+            PrintOrganizationNetworkAddresses("138.191.112.0/20", 6); // Information Technology
+            Console.WriteLine("Student Affairs-------------------");
+            PrintOrganizationNetworkAddresses("138.191.128.0/20", 5); // Student Affairs
+            Console.WriteLine("Facilities Management--------------------");
+            PrintOrganizationNetworkAddresses("138.191.144.0/20", 7); // Facilities Management
+            Console.WriteLine("Administrative Services------------------");
+            PrintOrganizationNetworkAddresses("138.191.160.0/20", 7); // Administrative Services
+            Console.WriteLine("--------------------------------------");
+        }
 
+        public static void PrintOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses)
+        {
+            string[] networkAddresses = FindOrganizationNetworkAddresses(addressCIDR, numberOfAddresses);
+
+            for (int index = 0; index < networkAddresses.Length; index++)
+            {
+                Console.WriteLine(networkAddresses[index]);
+            }
         }
 
         public static string[] FindOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses)
         {
             string[] networkAddresses = new string[numberOfAddresses];
+
+            string binaryAddress = "";
+            int prefix = 0;
+            ExtractPrefixAndAddressFromCIDR(addressCIDR, out prefix, out binaryAddress);
+
+            int bitLimit = 8;
+            int numberOfBits = 0;
+            for (int index = 0; index < bitLimit; index++)
+            {
+                if ((Math.Pow(2, index) - 1) / numberOfAddresses > 1 )
+                {
+                    numberOfBits = index;
+                    break;
+                }
+            }
+            string organizationSubnetPrefix = "/" + (prefix + numberOfBits).ToString();
+            string networkAddress = FindNetworkAddress(addressCIDR);
+
+            for (int index = 0; index < numberOfAddresses; index++)
+            {
+                string subNetworkAddress = networkAddress.Remove(prefix, numberOfBits);
+                string addedBits = IntToBinaryString(index);
+                addedBits = addedBits.PadLeft(numberOfBits, '0');
+                
+                networkAddresses[index] = BinaryStringAddressToDottedDecimal(subNetworkAddress.Insert(prefix, addedBits)) + organizationSubnetPrefix;
+            }
+
             return networkAddresses;
         }
+
+
 
         public static string AddressToBinaryString(string address)
         {
@@ -369,12 +431,14 @@ namespace ConsoleIPaddressTool
         public static string FindNetworkAddress(string addressCIDR)
         {
             string addressBinary = "";
-            ExtractAddressFromCIDR(addressCIDR, out addressBinary);
+            int prefix = 0;
+            ExtractPrefixAndAddressFromCIDR(addressCIDR, out prefix, out addressBinary);
 
             // The Network Address is (any address) (bitwise AND) (network mask)
-            var networkAddressInt = BinaryStringToInt(addressBinary) & BinaryStringToInt(FindNetworkMask(addressCIDR));
-            string networkAddressBinary = Convert.ToString(networkAddressInt, 2);
-
+            //var networkAddressInt = BinaryStringToInt(addressBinary) & BinaryStringToInt(FindNetworkMask(addressCIDR));
+            //string networkAddressBinary = Convert.ToString(networkAddressInt, 2);
+            string leftAddress = addressBinary.Remove(prefix, addressBinary.Length - prefix);
+            string networkAddressBinary = leftAddress.PadRight(addressBinary.Length, '0');
             return networkAddressBinary;
         }
 
