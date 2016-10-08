@@ -149,7 +149,7 @@ namespace ConsoleIPaddressTool
             int numberOfBits = 0;
             for (int index = 0; index < bitLimit; index++)
             {
-                if ((Math.Pow(2, index) - 1) / numberOfAddresses > 1 )
+                if ((Math.Pow(2, index) - 1) / numberOfAddresses >= 1 )
                 {
                     numberOfBits = index;
                     break;
