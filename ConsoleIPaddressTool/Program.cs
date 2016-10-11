@@ -8,7 +8,7 @@ namespace ConsoleIPaddressTool
     {
         static void Main(string[] args)
         {
-            PrintFourthLab();
+            PrintFifthLab();
 
             Console.ReadKey();
             Environment.Exit(1);
@@ -127,8 +127,42 @@ namespace ConsoleIPaddressTool
             Console.WriteLine("--------------------------------------");
         }
 
-        public static void PrintOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses)
+        /// <summary>
+        /// Lab 5 was the Classroom Subnets 
+        /// There has to be room for network address and broadcast address so subtract 2 from the total machines
+        /// </summary>
+        public static void PrintFifthLab()
         {
+            Console.WriteLine("Network Addresses for each lab or classroom--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.0/25", 7); // For each lab or classroom
+
+            //TODO Make a new function for the fifth lab that divides the addresses correctly.
+            // Still use a Subnet mask of /25
+            Console.WriteLine("Classroom 1 – 30 computers and printers--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.0/25", 60, true); // Classroom 1 – 30 computers and printers
+            Console.WriteLine("Classroom 2 – 30 computers and printers--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.16/25", 60, true); // Classroom 2 – 30 computers and printers
+            Console.WriteLine("Classroom 3 – 14 computers--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.32/25", 14, true); // Classroom 3 – 14 computers
+            Console.WriteLine("Classroom 4 – 14 computers--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.48/25", 14, true); // Classroom 4 – 14 computers
+            Console.WriteLine("Classroom 5 – 14 computers--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.64/25", 14, true); // Lab Classroom 5 – 14 computers
+            Console.WriteLine("Lab 1 – 6 computers--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.80/25", 6, true); // Lab 1 – 6 computers
+            Console.WriteLine("Lab 2 – 6 computers--------------------------");
+            PrintOrganizationNetworkAddresses("138.191.0.96/25", 6, true); // Lab 2 – 6 computers
+        }
+
+        public static void PrintOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses, bool orgPrefixOnlyFlag = false)
+        {
+            if (orgPrefixOnlyFlag == true)
+            {
+                string orgPrefix = FindOrganizationNetworkAddresses(addressCIDR, numberOfAddresses, true)[0];
+                Console.WriteLine(orgPrefix);
+                return;
+            }
+
             string[] networkAddresses = FindOrganizationNetworkAddresses(addressCIDR, numberOfAddresses);
 
             for (int index = 0; index < networkAddresses.Length; index++)
@@ -137,7 +171,7 @@ namespace ConsoleIPaddressTool
             }
         }
 
-        public static string[] FindOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses)
+        public static string[] FindOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses, bool orgPrefixOnlyFlag = false)
         {
             string[] networkAddresses = new string[numberOfAddresses];
 
@@ -156,6 +190,17 @@ namespace ConsoleIPaddressTool
                 }
             }
             string organizationSubnetPrefix = "/" + (prefix + numberOfBits).ToString();
+            if (prefix + numberOfBits > 31)
+            {
+                throw new Exception("Prefix is larger than 31. The input prefix is wrong or there are too many machines in the sub net");
+            }
+
+            if (orgPrefixOnlyFlag == true)
+            {
+                networkAddresses[0] = organizationSubnetPrefix;
+                return networkAddresses;
+            }
+
             string networkAddress = FindNetworkAddress(addressCIDR);
 
             for (int index = 0; index < numberOfAddresses; index++)
