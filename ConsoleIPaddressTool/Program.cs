@@ -133,25 +133,13 @@ namespace ConsoleIPaddressTool
         /// </summary>
         public static void PrintFifthLab()
         {
-            Console.WriteLine("Network Addresses for each lab or classroom--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.0/25", 7); // For each lab or classroom
-
-            //TODO Make a new function for the fifth lab that divides the addresses correctly.
-            // Still use a Subnet mask of /25
-            Console.WriteLine("Classroom 1 – 30 computers and printers--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.0/25", 60, true); // Classroom 1 – 30 computers and printers
-            Console.WriteLine("Classroom 2 – 30 computers and printers--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.16/25", 60, true); // Classroom 2 – 30 computers and printers
-            Console.WriteLine("Classroom 3 – 14 computers--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.32/25", 14, true); // Classroom 3 – 14 computers
-            Console.WriteLine("Classroom 4 – 14 computers--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.48/25", 14, true); // Classroom 4 – 14 computers
-            Console.WriteLine("Classroom 5 – 14 computers--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.64/25", 14, true); // Lab Classroom 5 – 14 computers
-            Console.WriteLine("Lab 1 – 6 computers--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.80/25", 6, true); // Lab 1 – 6 computers
-            Console.WriteLine("Lab 2 – 6 computers--------------------------");
-            PrintOrganizationNetworkAddresses("138.191.0.96/25", 6, true); // Lab 2 – 6 computers
+            Console.WriteLine("Classroom Subnets");
+            int[] numberOfMachinesArr = { 60, 60, 14, 14, 14, 6, 6 };
+            string[] sectorAddresses = FindSectorAddresses("138.191.0.0/25", numberOfMachinesArr);
+            foreach (string sector in sectorAddresses)
+            {
+                Console.WriteLine(sector);
+            }
         }
 
         public static void PrintOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses, bool orgPrefixOnlyFlag = false)
@@ -171,6 +159,62 @@ namespace ConsoleIPaddressTool
             }
         }
 
+        public static string[] FindSectorAddresses(string baseNetworkAddress, int[] numberOfMachinesArr)
+        {
+            string[] sectorAddresses = new string[numberOfMachinesArr.Length];
+            int basePrefix = 0;
+            string baseBinaryAddress = "";
+            ExtractPrefixAndAddressFromCIDR(baseNetworkAddress, out basePrefix, out baseBinaryAddress);
+            int[] prefixForSectorArr = new int[numberOfMachinesArr.Length];
+            int[] numberOfAddressInSector = new int[numberOfMachinesArr.Length];
+
+            int previousSectorMax = 0;
+            for (int index = 0; index < numberOfMachinesArr.Length; index++)
+            {
+                int numberOfBits = FindNumberOfBits(basePrefix, numberOfMachinesArr[index]);    
+                int maxDecimalForNumberOfBits = FindMaxDecimalForNumberOfBits(numberOfBits);
+                int sectorMax = maxDecimalForNumberOfBits + previousSectorMax;
+                int sectorAddressDecimal = BinaryStringToInt(baseBinaryAddress) + sectorMax;
+                previousSectorMax = sectorMax;
+                string sectorAddressDotted = BinaryStringAddressToDottedDecimal(IntToBinaryString(sectorAddressDecimal));
+                sectorAddresses[index] =  sectorAddressDotted + "/" + FindNewPrefixForNumberOfAddresses(basePrefix, numberOfMachinesArr[index]).ToString();
+            }
+            
+            return sectorAddresses;
+        }
+
+        public static int FindMaxDecimalForNumberOfBits(int numberOfBits)
+        {
+            string maxBinaryString = "";
+            maxBinaryString = maxBinaryString.PadLeft(numberOfBits, '1');
+            return BinaryStringToInt(maxBinaryString);
+        }
+
+        public static int FindNumberOfBits(int prefix, int numberOfAddresses)
+        {
+            int bitLimit = 8;
+            int numberOfBits = 0;
+            for (int index = 0; index < bitLimit; index++)
+            {
+                if ((Math.Pow(2, index) - 1) / numberOfAddresses >= 1)
+                {
+                    numberOfBits = index;
+                    break;
+                }
+            }
+            if (prefix + numberOfBits > 31)
+            {
+                throw new Exception("Prefix is larger than 31. The input prefix is wrong or there are too many machines in the sub net");
+            }
+
+            return numberOfBits;
+        }
+
+        public static int FindNewPrefixForNumberOfAddresses(int prefix, int numberOfAddresses)
+        {
+            return prefix + FindNumberOfBits(prefix, numberOfAddresses);
+        }
+
         public static string[] FindOrganizationNetworkAddresses(string addressCIDR, int numberOfAddresses, bool orgPrefixOnlyFlag = false)
         {
             string[] networkAddresses = new string[numberOfAddresses];
@@ -178,22 +222,7 @@ namespace ConsoleIPaddressTool
             string binaryAddress = "";
             int prefix = 0;
             ExtractPrefixAndAddressFromCIDR(addressCIDR, out prefix, out binaryAddress);
-
-            int bitLimit = 8;
-            int numberOfBits = 0;
-            for (int index = 0; index < bitLimit; index++)
-            {
-                if ((Math.Pow(2, index) - 1) / numberOfAddresses >= 1 )
-                {
-                    numberOfBits = index;
-                    break;
-                }
-            }
-            string organizationSubnetPrefix = "/" + (prefix + numberOfBits).ToString();
-            if (prefix + numberOfBits > 31)
-            {
-                throw new Exception("Prefix is larger than 31. The input prefix is wrong or there are too many machines in the sub net");
-            }
+            string organizationSubnetPrefix = "/" + FindNewPrefixForNumberOfAddresses(prefix, numberOfAddresses).ToString();
 
             if (orgPrefixOnlyFlag == true)
             {
@@ -201,6 +230,7 @@ namespace ConsoleIPaddressTool
                 return networkAddresses;
             }
 
+            int numberOfBits = FindNumberOfBits(prefix, numberOfAddresses);
             string networkAddress = FindNetworkAddress(addressCIDR);
 
             for (int index = 0; index < numberOfAddresses; index++)
