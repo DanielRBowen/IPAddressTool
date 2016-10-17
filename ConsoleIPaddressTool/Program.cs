@@ -8,7 +8,7 @@ namespace ConsoleIPaddressTool
     {
         static void Main(string[] args)
         {
-            PrintFifthLab();
+            //PrintFifthLab(); Fifth Lab is wrong.
 
             Console.ReadKey();
             Environment.Exit(1);
@@ -159,14 +159,18 @@ namespace ConsoleIPaddressTool
             }
         }
 
+        /// <summary>
+        /// Totally wrong
+        /// </summary>
+        /// <param name="baseNetworkAddress"></param>
+        /// <param name="numberOfMachinesArr"></param>
+        /// <returns></returns>
         public static string[] FindSectorAddresses(string baseNetworkAddress, int[] numberOfMachinesArr)
         {
             string[] sectorAddresses = new string[numberOfMachinesArr.Length];
             int basePrefix = 0;
             string baseBinaryAddress = "";
             ExtractPrefixAndAddressFromCIDR(baseNetworkAddress, out basePrefix, out baseBinaryAddress);
-            int[] prefixForSectorArr = new int[numberOfMachinesArr.Length];
-            int[] numberOfAddressInSector = new int[numberOfMachinesArr.Length];
 
             int previousSectorMax = 0;
             for (int index = 0; index < numberOfMachinesArr.Length; index++)
